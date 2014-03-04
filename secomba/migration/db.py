@@ -24,18 +24,20 @@ class NewRelation(object):
 
 # SQLAlchemy DB Object
 
-class DB(object):
+class _DB(object):
     """DB SQLAlchemy Object"""
 
     _session = None
     _engine = None
     _meta = None
+    _conn = None
 
     def __init__(self):
         self.create_engine()
         self.create_session()
         self.create_tables()
         self.create_mappers()
+        _DB._conn = self
 
     @property
     def meta(self):
@@ -69,3 +71,13 @@ class DB(object):
         mapper(NewFoto, self.meta.tables['secom_galeria_foto'])
         mapper(NewMidia, self.meta.tables['secom_debaser2_files'])
         mapper(NewRelation, self.meta.tables['secom_modules_relationship'])
+
+    @classmethod
+    def get(klass):
+        return klass._conn 
+
+# return DB object if exists, else create one and return
+def get():
+    if _DB._conn is None:
+        _DB()
+    return _DB.get()
