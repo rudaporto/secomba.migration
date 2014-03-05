@@ -1,0 +1,12 @@
+<configure xmlns="http://namespaces.zope.org/zope"
+    xmlns:browser="http://namespaces.zope.org/browser"
+    i18n_domain="secomba.migration" >
+
+    <browser:page
+        name="noticia_migration"
+        for="*"
+        permission="zope2.View"
+        class=".views.NoticiaMigrationView"
+        />
+
+</configure>
