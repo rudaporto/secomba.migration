@@ -9,4 +9,39 @@
         class=".views.NoticiaMigrationView"
         />
 
+    <browser:page
+        name="album_migration"
+        for="*"
+        permission="zope2.View"
+        class=".views.AlbumMigrationView"
+        />
+
+    <browser:page
+        name="photo_migration"
+        for="*"
+        permission="zope2.View"
+        class=".views.PhotoMigrationView"
+        />
+
+    <browser:page
+        name="audio_migration"
+        for="*"
+        permission="zope2.View"
+        class=".views.AudioMigrationView"
+        />
+
+    <browser:page
+        name="video_migration"
+        for="*"
+        permission="zope2.View"
+        class=".views.VideoMigrationView"
+        />
+
+    <browser:page
+        name="relation_migration"
+        for="*"
+        permission="zope2.View"
+        class=".views.RelationMigrationView"
+        />
+
 </configure>
