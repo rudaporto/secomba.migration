@@ -48,7 +48,7 @@ setup(name='secomba.migration',
           'setuptools',
 	  'MySQL-python',
 	  'zope.sqlalchemy==0.6.1',
-	  'sqlalchemy<0.7-dev',
+	  'sqlalchemy<0.8-dev',
           # -*- Extra requirements: -*-
       ],
       entry_points="""

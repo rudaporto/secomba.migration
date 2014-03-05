@@ -12,15 +12,14 @@ class NewNoticia(object):
 class NewAlbum(object):
     pass
 
-class NewFoto(object):
+class NewPhoto(object):
     pass
 
-class NewMidia(object):
+class NewMedia(object):
     pass
 
 class NewRelation(object):
     pass
-
 
 # SQLAlchemy DB Object
 
@@ -68,8 +67,8 @@ class _DB(object):
     def create_mappers(self):
         mapper(NewNoticia, self.meta.tables['secom_stories'])
         mapper(NewAlbum, self.meta.tables['secom_galeria_evento'])
-        mapper(NewFoto, self.meta.tables['secom_galeria_foto'])
-        mapper(NewMidia, self.meta.tables['secom_debaser2_files'])
+        mapper(NewPhoto, self.meta.tables['secom_galeria_foto'])
+        mapper(NewMedia, self.meta.tables['secom_debaser2_files'])
         mapper(NewRelation, self.meta.tables['secom_modules_relationship'])
 
     @classmethod
