@@ -55,7 +55,7 @@ class _DB(object):
         DSN = os.getenv('SECOMDSN', None)
         if DSN is None:
             raise Exception('System environment SECOMDSN is not defined')
-        self._engine = create_engine(DSN, convert_unicode=True)
+        self._engine = create_engine(DSN, convert_unicode=True, encoding='iso8859-1')
 
     def create_session(self):
         self._session = scoped_session(sessionmaker(bind=self.engine,
