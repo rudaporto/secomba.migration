@@ -4,7 +4,9 @@ from DateTime import DateTime
 from secomba.migration import db
 from secomba.migration import assunto
 
-FILES_PATH = '/usr/local/zope-secom/migration/'
+PHOTO_PATH = '/usr/local/zope-secom/migration/photo'
+AUDIO_PATH = '/usr/local/zope-secom/migration/audio'
+VIDEO_PATH = '/usr/local/zope-secom/migration/video'
 
 map_type = {
 'Noticia':'noticia',
@@ -13,23 +15,28 @@ map_type = {
 'ATPhotoAlbum':'galeria'
 }
 
-def save_photo_album_directory(fileid, image, idevento, prefix=None):
-    if prefix is not None:
-        fileid = prefix + '_' + fileid
-    path = FILES_PATH + '/' + str(idevento) + '/' + fileid
-
+def write_file(path, file):
     if not os.path.isfile(path):
         fp = open(path,'w')
-    else:
-        fp = file(path, 'rw')
+    elif not os.path.isdir(path):
+        fp = open(path, 'rw')
         fp.seek(0)
+    else:
+        raise Exception('Directory exists with same name as file')
 
-    for data in image.getData():
+    for data in file.getData():
         fp.write(data)
     fp.close()
 
+def save_photo_album(fileid, imagem, idevento, prefix=None):
+    if prefix is not None:
+        fileid = prefix + '_' + fileid
+    path = PHOTO_PATH + '/' + str(idevento) + '/' + fileid
+
+    write_file(path, imagem)
+
 def create_album_directory(idevento):
-    path = FILES_PATH + '/' + str(idevento)
+    path = PHOTO_PATH + '/' + str(idevento)
     try:
         os.makedirs(path)
     except OSError:
@@ -81,38 +88,112 @@ def map_photo(old_obj, photo, idevento):
     photo.ordem = 1000
     photo.keywords = ''
     photo.informacoes = ''
+    photo.plone_path = '/'.join(old_obj.getPhysicalPath()[3:])
 
     try:
         image = old_obj.restrictedTraverse('image')
-        save_photo_album_directory(fileid, image, idevento, prefix=None)
+        save_photo_album(fileid, image, idevento, prefix=None)
     except AttributeError,e:
         pass
 
     try:
         thumb = old_obj.restrictedTraverse('image_thumb')
-        save_photo_album_directory(fileid, thumb, idevento, prefix='thumb')
-        save_photo_album_directory(fileid, thumb, idevento, prefix='manchete')
+        save_photo_album(fileid, thumb, idevento, prefix='thumb')
+        save_photo_album(fileid, thumb, idevento, prefix='manchete')
     except AttributeError,e:
         pass
 
     try:
         preview = old_obj.restrictedTraverse('image_preview')
-        save_photo_album_directory(fileid, preview, idevento, prefix='normal')
-        save_photo_album_directory(fileid, preview, idevento, prefix='destaque')
+        save_photo_album(fileid, preview, idevento, prefix='normal')
+        save_photo_album(fileid, preview, idevento, prefix='destaque')
     except AttributeError,e:
         pass
 
     try:
         tile = old_obj.restrictedTraverse('image_tile')
-        save_photo_album_directory(fileid, tile, idevento, prefix='bloco')
+        save_photo_album(fileid, tile, idevento, prefix='bloco')
     except AttributeError,e:
         pass
 
 def map_audio(old_obj, audio):
-    pass
+    plone_uid = old_obj.UID()
+    audio.plone_uid = plone_uid
+    file_baixa = old_obj.getArquivoBaixa()
+    file = old_obj.getArquivoAlta()
+    if not file:
+        file = file_baixa
+    filename = file.filename
+    if not filename:
+        filename = 'audio.mp3'
+    audio_filename = plone_uid + '-' + filename
+    audio.file = audio_filename
+    audio.added = int(old_obj.created().timeTime())
+    audio.title = old_obj.Title().decode('utf-8').encode('iso8859-1','ignore')
+    audio.file_name = filename
+    audio.photo_name = ''
+    audio.audio_video = 1 # 0 - media type audio
+    audio.addinfo = ''
+    audio.highlight = 0
+    audio.category = 0
+    audio.reporter = ''
+    audio.photo = ''
+    audio.link = ''
+    audio.frequence = ''
+    audio.rating = 0.0
+    audio.votes = 0
+    audio.published = 1
+    audio.fileext = 'mp3'
+    audio.order = 0
+    audio.keywords = ''
+    audio.hits = 0
+    audio.views = 0
+    audio.plone_path = '/'.join(old_obj.getPhysicalPath()[3:])
+    audio_path = AUDIO_PATH + '/' + audio_filename
+    write_file(audio_path, file)
 
 def map_video(old_obj, video):
-    pass
+    plone_uid = old_obj.UID()
+    video.plone_uid = plone_uid
+    imagem = old_obj.getImagem()
+    file_baixa = old_obj.getArquivoBaixa()
+    file = old_obj.getArquivoAlta()
+    if not file:
+        file = file_baixa
+    filename = file.filename
+    if not filename:
+        filename = 'video.flv'
+    video_filename = plone_uid + '-' + filename
+    video.file = video_filename
+    video.added = int(old_obj.created().timeTime())
+    video.title = old_obj.Title().decode('utf-8').encode('iso8859-1','ignore')
+    video.file_name = filename
+    imagem_name = imagem.filename
+    if not imagem_name:
+        imagem_name = 'video-preview.jpg'
+    imagem_name = plone_uid + '-' + imagem_name
+    video.photo_name = imagem_name
+    video.audio_video = 0 # 0 - media type video
+    video.addinfo = ''
+    video.highlight = 0
+    video.category = 0
+    video.reporter = ''
+    video.photo = ''
+    video.link = ''
+    video.frequence = ''
+    video.rating = 0.0
+    video.votes = 0
+    video.published = 1
+    video.fileext = 'flv'
+    video.order = 0
+    video.keywords = ''
+    video.hits = 0
+    video.views = 0
+    video.plone_path = '/'.join(old_obj.getPhysicalPath()[3:])
+    video_path = VIDEO_PATH + '/' + video_filename
+    write_file(video_path, file)
+    imagem_path = VIDEO_PATH + '/' + imagem_name
+    write_file(imagem_path, imagem)
 
 def map_noticia(old_obj, noticia):
     noticia.plone_uid = old_obj.UID()
