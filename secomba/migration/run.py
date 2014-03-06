@@ -9,17 +9,15 @@ AUDIO_PATH = '/usr/local/zope-secom/migration/audio'
 VIDEO_PATH = '/usr/local/zope-secom/migration/video'
 
 map_type = {
-'Noticia':'noticia',
+'Noticia':'noticias',
 'Audio':'audio',
 'Video':'video',
 'ATPhotoAlbum':'galeria'
 }
 
 def write_file(path, file):
-    if not os.path.isfile(path):
+    if not os.path.isdir(path):
         fp = open(path,'w')
-    elif not os.path.isdir(path):
-        fp = open(path, 'rw')
         fp.seek(0)
     else:
         raise Exception('Directory exists with same name as file')
@@ -47,7 +45,7 @@ def query_catalog(context, portal_type, begin=None, end=None):
     """Query portal_catalog using date time range and portal_type.
     """
     if begin is None:
-        begin = DateTime() - 60
+        begin = DateTime() - 10
     if end is None:
         end = DateTime() 
     date_range_query = { 'query':(begin, end), 'range': 'min:max'}
@@ -58,7 +56,8 @@ def query_catalog(context, portal_type, begin=None, end=None):
                                   'review_state': 'published'})
 
 def map_album(old_obj, album):
-    album.plone_uid = old_obj.UID()
+    plone_uid = old_obj.UID()
+    album.plone_uid = plone_uid
     album.idcategoria = 1
     album.titulo = old_obj.Title().decode('utf-8').encode('iso8859-1','ignore')
     album.thumb = 0
@@ -72,19 +71,23 @@ def map_album(old_obj, album):
     album.diretorio = album.idevento
     create_album_directory(album.idevento)
     for old_photo in old_obj.objectValues():
-        photo = db.NewPhoto()
-        session.add(photo)
-        map_photo(old_photo, photo, album.idevento)
+        if old_photo.portal_type != 'ATPhoto':
+            continue
+        photo = session.query(db.NewPhoto).filter_by(plone_uid=old_photo.UID()).first()
+        if photo is None:
+            photo = db.NewPhoto()
+            session.add(photo)
+        map_photo(old_photo, photo, album.idevento, old_obj)
 
-def map_photo(old_obj, photo, idevento):
-    fileid = old_obj.id.strip(' ')
+def map_photo(old_obj, photo, idevento, old_album):
     UID = old_obj.UID()
+    nomearquivo = UID + '-photo.jpg'
     photo.plone_uid = UID
-    photo.title = old_obj.Title().decode('utf-8').encode('iso8859-1','ignore')
-    photo.credito = ''
-    photo.nomearquivo = fileid
+    photo.titulo = old_album.Title().decode('utf-8').encode('iso8859-1','ignore')
+    photo.credito = old_album.Rights().decode('utf-8').encode('iso8859-1','ignore')
+    photo.nomearquivo = nomearquivo
     photo.evento = idevento
-    photo.descricao = old_obj.Description().decode('utf-8').encode('iso8859-1','ignore')
+    photo.descricao = old_album.Description().decode('utf-8').encode('iso8859-1','ignore')
     photo.ordem = 1000
     photo.keywords = ''
     photo.informacoes = ''
@@ -92,29 +95,29 @@ def map_photo(old_obj, photo, idevento):
 
     try:
         image = old_obj.restrictedTraverse('image')
-        save_photo_album(fileid, image, idevento, prefix=None)
+        save_photo_album(nomearquivo, image, idevento, prefix=None)
     except AttributeError,e:
-        pass
+        print 'Image not found for photo: %s' % photo.plone_path
 
     try:
         thumb = old_obj.restrictedTraverse('image_thumb')
-        save_photo_album(fileid, thumb, idevento, prefix='thumb')
-        save_photo_album(fileid, thumb, idevento, prefix='manchete')
+        save_photo_album(nomearquivo, thumb, idevento, prefix='thumb')
+        save_photo_album(nomearquivo, thumb, idevento, prefix='manchete')
     except AttributeError,e:
-        pass
+        print 'Image thumb not found for photo: %s' % photo.plone_path
 
     try:
         preview = old_obj.restrictedTraverse('image_preview')
-        save_photo_album(fileid, preview, idevento, prefix='normal')
-        save_photo_album(fileid, preview, idevento, prefix='destaque')
+        save_photo_album(nomearquivo, preview, idevento, prefix='normal')
+        save_photo_album(nomearquivo, preview, idevento, prefix='destaque')
     except AttributeError,e:
-        pass
+        print 'Image preview not found for photo: %s' % photo.plone_path
 
     try:
         tile = old_obj.restrictedTraverse('image_tile')
-        save_photo_album(fileid, tile, idevento, prefix='bloco')
+        save_photo_album(nomearquivo, tile, idevento, prefix='bloco')
     except AttributeError,e:
-        pass
+        print 'Image tile not found for photo: %s' % photo.plone_path
 
 def map_audio(old_obj, audio):
     plone_uid = old_obj.UID()
@@ -123,10 +126,10 @@ def map_audio(old_obj, audio):
     file = old_obj.getArquivoAlta()
     if not file:
         file = file_baixa
-    filename = file.filename
+    filename = file.filename.decode('utf-8').encode('iso8859-1','ignore')
     if not filename:
         filename = 'audio.mp3'
-    audio_filename = plone_uid + '-' + filename
+    audio_filename = plone_uid + '-audio.mp3' 
     audio.file = audio_filename
     audio.added = int(old_obj.created().timeTime())
     audio.title = old_obj.Title().decode('utf-8').encode('iso8859-1','ignore')
@@ -160,18 +163,15 @@ def map_video(old_obj, video):
     file = old_obj.getArquivoAlta()
     if not file:
         file = file_baixa
-    filename = file.filename
+    filename = file.filename.decode('utf-8').encode('iso8859-1','ignore')
     if not filename:
         filename = 'video.flv'
-    video_filename = plone_uid + '-' + filename
+    video_filename = plone_uid + '-video.flv' 
     video.file = video_filename
     video.added = int(old_obj.created().timeTime())
     video.title = old_obj.Title().decode('utf-8').encode('iso8859-1','ignore')
     video.file_name = filename
-    imagem_name = imagem.filename
-    if not imagem_name:
-        imagem_name = 'video-preview.jpg'
-    imagem_name = plone_uid + '-' + imagem_name
+    imagem_name = plone_uid + '-video-preview.jpg' 
     video.photo_name = imagem_name
     video.audio_video = 0 # 0 - media type video
     video.addinfo = ''
@@ -194,6 +194,58 @@ def map_video(old_obj, video):
     write_file(video_path, file)
     imagem_path = VIDEO_PATH + '/' + imagem_name
     write_file(imagem_path, imagem)
+
+def create_news_relations(old_obj, noticia, reverse=False):
+    conn = db.get()
+    session = conn.Session()
+    session.flush()
+    noticia_sqlid = noticia.storyid
+    noticia_uid = old_obj.UID()
+
+    for item in old_obj.getRelatedItems():
+        related_desc = map_type.get(item.portal_type)
+        related_uid = item.UID()
+        if related_desc == 'galeria':
+            field_sqlid = 'idevento'
+            related_type = db.NewAlbum
+        elif related_desc == 'noticias':
+            field_sqlid = 'storyid'
+            related_type = db.NewNoticia
+        else:
+            field_sqlid = 'xfid'
+            related_type = db.NewMedia
+
+        related = session.query(related_type).filter_by(plone_uid=related_uid).first()
+        if related is None:
+            continue
+        related_sqlid = getattr(related, field_sqlid)
+
+        relation_direct = session.query(db.NewRelation).filter_by(
+                content_plone_uid=noticia_uid,
+                related_plone_uid=related_uid).first()
+        if relation_direct is None:
+            relation_direct = db.NewRelation()
+            session.add(relation_direct)
+        relation_direct.idcontend = noticia_sqlid
+        relation_direct.modulecontend = 'noticias'
+        relation_direct.idrelated = related_sqlid
+        relation_direct.modulerelated = related_desc
+        relation_direct.content_plone_uid = noticia_uid
+        relation_direct.related_plone_uid = related_uid
+
+        if reverse is True:
+            relation_reverse = session.query(db.NewRelation).filter_by(
+                    content_plone_uid=related_uid,
+                    related_plone_uid=noticia_uid).first()
+            if relation_reverse is None:
+                relation_reverse = db.NewRelation()
+                session.add(relation_reverse)
+            relation_reverse.idcontend = related_sqlid
+            relation_reverse.modulecontend = related_desc
+            relation_reverse.idrelated = noticia_sqlid
+            relation_reverse.modulerelated = 'noticias'
+            relation_reverse.content_plone_uid = related_uid
+            relation_reverse.related_plone_uid = noticia_uid
 
 def map_noticia(old_obj, noticia):
     noticia.plone_uid = old_obj.UID()
@@ -239,10 +291,7 @@ def map_noticia(old_obj, noticia):
     noticia.approver = 1
     noticia.regiao = '0'
     noticia.plone_path = '/'.join(old_obj.getPhysicalPath()[3:])
-    #related = object.getRelatedItems()
-    #for item in related:
-    #    new_type = map_type.get(item.portal_type)
-    #    relation = db.NewRelation()
+    create_news_relations(old_obj, noticia)
 
 def migrate_content(context, portal_type, mapper, map_func, debug=False):
     """Migrate portal_type content from Plone to SQLDatabase, using map_content function
@@ -255,10 +304,8 @@ def migrate_content(context, portal_type, mapper, map_func, debug=False):
     for item in results:
         old_obj = item.getObject()
         UID = old_obj.UID()
-        new_obj = session.query(mapper).filter_by(plone_uid=UID)
-        if new_obj.count() > 0:
-            new_obj = new_obj[0]
-        else:
+        new_obj = session.query(mapper).filter_by(plone_uid=UID).first()
+        if new_obj is None:
             new_obj = mapper()
             session.add(new_obj)
         new_obj = map_func(old_obj, new_obj)
@@ -298,7 +345,8 @@ def migrate_video(context):
     """
     return migrate_content(context, 'Video', db.NewMedia, map_video)
 
-def migrate_relation():
-    """Rebuild relationship from Noticias, Album, Video, Audio.
+def migrate_relation(context):
+    """Rebuild relationship from Noticias to Album, Video and Audio content.
+    context: Plone Site object
     """
-    pass
+    migrade_noticia(context)
