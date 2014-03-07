@@ -8,6 +8,9 @@ PHOTO_PATH = '/usr/local/zope-secom/migration/photo'
 AUDIO_PATH = '/usr/local/zope-secom/migration/audio'
 VIDEO_PATH = '/usr/local/zope-secom/migration/video'
 
+BEGIN_DAYS = 120
+END_DAYS = 9
+
 map_type = {
 'Noticia':'noticias',
 'Audio':'audio',
@@ -45,9 +48,9 @@ def query_catalog(context, portal_type, begin=None, end=None):
     """Query portal_catalog using date time range and portal_type.
     """
     if begin is None:
-        begin = DateTime() - 10
+        begin = DateTime() - BEGIN_DAYS
     if end is None:
-        end = DateTime() 
+        end = DateTime() - END_DAYS
     date_range_query = { 'query':(begin, end), 'range': 'min:max'}
     catalog = context.portal_catalog
     return catalog.searchResults({'portal_type': portal_type,
@@ -136,7 +139,7 @@ def map_audio(old_obj, audio):
     audio.file_name = filename
     audio.photo_name = ''
     audio.audio_video = 1 # 0 - media type audio
-    audio.addinfo = ''
+    audio.addinfo = old_obj.getResumo().decode('utf-8').encode('iso8859-1','ignore')
     audio.highlight = 0
     audio.category = 0
     audio.reporter = ''
@@ -174,7 +177,7 @@ def map_video(old_obj, video):
     imagem_name = plone_uid + '-video-preview.jpg' 
     video.photo_name = imagem_name
     video.audio_video = 0 # 0 - media type video
-    video.addinfo = ''
+    video.addinfo = old_obj.getResumo().decode('utf-8').encode('iso8859-1','ignore')
     video.highlight = 0
     video.category = 0
     video.reporter = ''
@@ -300,7 +303,7 @@ def migrate_content(context, portal_type, mapper, map_func, debug=False):
     results = query_catalog(context, portal_type)
     conn = db.get()
     session = conn.Session()
-    debug_text = 'Begin Import: ' + str(DateTime()) + '\n'
+    debug_text = 'Begin Import: %s - %s %s' % (portal_type ,str(DateTime()),'\n')
     for item in results:
         old_obj = item.getObject()
         UID = old_obj.UID()
@@ -313,7 +316,10 @@ def migrate_content(context, portal_type, mapper, map_func, debug=False):
             debug_text += old_obj.Title() + ' | ' \
             + str(old_obj.created()) + ' | ' \
             + '/'.join(old_obj.getPhysicalPath()[3:]) + '\n'
-    return debug_text + 'End Import: ' + str(DateTime()) + '\n'
+
+    debug_text += 'End Import: %s - %s %s' % (portal_type, str(DateTime()), '\n')
+    print debug_text
+    return debug_text
 
 def migrate_noticia(context):
     """Migrate Noticia content from Plone to SQLDatabase.
@@ -326,12 +332,6 @@ def migrate_album(context):
     context: Plone Site object
     """
     return migrate_content(context, 'ATPhotoAlbum', db.NewAlbum, map_album)
-
-def migrate_photo(context):
-    """Migrate Photo content from Plone to SQLDatabase and filesystem.
-    context: Plone Site object
-    """
-    return migrate_content(context, 'ATPhoto', db.NewPhoto, map_photo)
 
 def migrate_audio(context):
     """Migrate Audio content from Plone to SQLDatabase and filesystem.
@@ -346,7 +346,16 @@ def migrate_video(context):
     return migrate_content(context, 'Video', db.NewMedia, map_video)
 
 def migrate_relation(context):
-    """Rebuild relationship from Noticias to Album, Video and Audio content.
+    """Rebuild relation from Noticias to Album, Video and Audio content.
     context: Plone Site object
     """
+    migrade_noticia(context)
+
+def migrate_all(context):
+    """Migrate all content: Video, Album and Photos, Audio, Notiicas and Relation.
+    context: Plone Site object
+    """
+    migrate_album(context)
+    migrate_audio(context)
+    migrate_video(context)
     migrade_noticia(context)

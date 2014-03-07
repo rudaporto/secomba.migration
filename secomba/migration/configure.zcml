@@ -17,10 +17,10 @@
         />
 
     <browser:page
-        name="photo_migration"
+        name="all_migration"
         for="*"
         permission="zope2.View"
-        class=".views.PhotoMigrationView"
+        class=".views.AllMigrationView"
         />
 
     <browser:page

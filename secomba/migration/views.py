@@ -12,10 +12,10 @@ class AlbumMigrationView(BrowserView):
     def __call__(self):
         return run.migrate_album(self.context)
 
-class PhotoMigrationView(BrowserView):
+class AllMigrationView(BrowserView):
 
     def __call__(self):
-        return run.migrate_photo(self.context)
+        return run.migrate_all(self.context)
 
 class AudioMigrationView(BrowserView):
 
