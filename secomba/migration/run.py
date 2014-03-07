@@ -8,8 +8,8 @@ PHOTO_PATH = '/usr/local/zope-secom/migration/photo'
 AUDIO_PATH = '/usr/local/zope-secom/migration/audio'
 VIDEO_PATH = '/usr/local/zope-secom/migration/video'
 
-BEGIN_DAYS = 120
-END_DAYS = 9
+BEGIN_DAYS = 12
+END_DAYS = 0
 
 map_type = {
 'Noticia':'noticias',
@@ -358,4 +358,4 @@ def migrate_all(context):
     migrate_album(context)
     migrate_audio(context)
     migrate_video(context)
-    migrade_noticia(context)
+    migrate_noticia(context)
