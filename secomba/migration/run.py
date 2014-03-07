@@ -108,7 +108,7 @@ def map_photo(old_obj, photo, idevento, old_album):
     except AttributeError,e:
         print 'Image not found for photo: %s' % photo.plone_path
     except Exception, e:
-        print 'Failure to get photo: %s - %s' % (photo.plone_path, str(e)
+        print 'Failure to get photo: %s - %s' % (photo.plone_path, str(e))
 
     try:
         thumb = old_obj.unrestrictedTraverse('image_thumb')
@@ -117,7 +117,7 @@ def map_photo(old_obj, photo, idevento, old_album):
     except AttributeError,e:
         print 'Image thumb not found for photo: %s' % photo.plone_path
     except Exception, e:
-        print 'Failure to get photo: %s - %s' % (photo.plone_path, str(e)
+        print 'Failure to get photo: %s - %s' % (photo.plone_path, str(e))
 
     try:
         preview = old_obj.unrestrictedTraverse('image_preview')
@@ -126,7 +126,7 @@ def map_photo(old_obj, photo, idevento, old_album):
     except AttributeError,e:
         print 'Image preview not found for photo: %s' % photo.plone_path
     except Exception, e:
-        print 'Failure to get photo: %s - %s' % (photo.plone_path, str(e)
+        print 'Failure to get photo: %s - %s' % (photo.plone_path, str(e))
 
     try:
         tile = old_obj.unrestrictedTraverse('image_tile')
@@ -134,7 +134,7 @@ def map_photo(old_obj, photo, idevento, old_album):
     except AttributeError,e:
         print 'Image tile not found for photo: %s' % photo.plone_path
     except Exception, e:
-        print 'Failure to get photo: %s - %s' % (photo.plone_path, str(e)
+        print 'Failure to get photo: %s - %s' % (photo.plone_path, str(e))
 
 
 def map_audio(old_obj, audio):
