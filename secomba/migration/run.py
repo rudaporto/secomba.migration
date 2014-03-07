@@ -18,6 +18,7 @@ map_type = {
 'ATPhotoAlbum':'galeria'
 }
 
+
 def write_file(path, file):
     if not os.path.isdir(path):
         fp = open(path,'w')
@@ -29,12 +30,14 @@ def write_file(path, file):
         fp.write(data)
     fp.close()
 
+
 def save_photo_album(fileid, imagem, idevento, prefix=None):
     if prefix is not None:
         fileid = prefix + '_' + fileid
     path = PHOTO_PATH + '/' + str(idevento) + '/' + fileid
 
     write_file(path, imagem)
+
 
 def create_album_directory(idevento):
     path = PHOTO_PATH + '/' + str(idevento)
@@ -43,6 +46,7 @@ def create_album_directory(idevento):
     except OSError:
         if not os.path.isdir(path):
             raise Exception('Exists file with name ID equal to album directory: %s' % str(idevento))
+
 
 def query_catalog(context, portal_type, begin=None, end=None):
     """Query portal_catalog using date time range and portal_type.
@@ -57,6 +61,7 @@ def query_catalog(context, portal_type, begin=None, end=None):
                                   'created' : date_range_query,
                                   'sort_on' : 'created',
                                   'review_state': 'published'})
+
 
 def map_album(old_obj, album):
     plone_uid = old_obj.UID()
@@ -82,6 +87,7 @@ def map_album(old_obj, album):
             session.add(photo)
         map_photo(old_photo, photo, album.idevento, old_obj)
 
+
 def map_photo(old_obj, photo, idevento, old_album):
     UID = old_obj.UID()
     nomearquivo = UID + '-photo.jpg'
@@ -97,30 +103,39 @@ def map_photo(old_obj, photo, idevento, old_album):
     photo.plone_path = '/'.join(old_obj.getPhysicalPath()[3:])
 
     try:
-        image = old_obj.restrictedTraverse('image')
+        image = old_obj.unrestrictedTraverse('image')
         save_photo_album(nomearquivo, image, idevento, prefix=None)
     except AttributeError,e:
         print 'Image not found for photo: %s' % photo.plone_path
+    except Exception, e:
+        print 'Failure to get photo: %s - %s' % (photo.plone_path, str(e)
 
     try:
-        thumb = old_obj.restrictedTraverse('image_thumb')
+        thumb = old_obj.unrestrictedTraverse('image_thumb')
         save_photo_album(nomearquivo, thumb, idevento, prefix='thumb')
         save_photo_album(nomearquivo, thumb, idevento, prefix='manchete')
     except AttributeError,e:
         print 'Image thumb not found for photo: %s' % photo.plone_path
+    except Exception, e:
+        print 'Failure to get photo: %s - %s' % (photo.plone_path, str(e)
 
     try:
-        preview = old_obj.restrictedTraverse('image_preview')
+        preview = old_obj.unrestrictedTraverse('image_preview')
         save_photo_album(nomearquivo, preview, idevento, prefix='normal')
         save_photo_album(nomearquivo, preview, idevento, prefix='destaque')
     except AttributeError,e:
         print 'Image preview not found for photo: %s' % photo.plone_path
+    except Exception, e:
+        print 'Failure to get photo: %s - %s' % (photo.plone_path, str(e)
 
     try:
-        tile = old_obj.restrictedTraverse('image_tile')
+        tile = old_obj.unrestrictedTraverse('image_tile')
         save_photo_album(nomearquivo, tile, idevento, prefix='bloco')
     except AttributeError,e:
         print 'Image tile not found for photo: %s' % photo.plone_path
+    except Exception, e:
+        print 'Failure to get photo: %s - %s' % (photo.plone_path, str(e)
+
 
 def map_audio(old_obj, audio):
     plone_uid = old_obj.UID()
@@ -161,6 +176,7 @@ def map_audio(old_obj, audio):
     audio_path = AUDIO_PATH + '/' + audio_filename
     write_file(audio_path, file)
 
+
 def map_video(old_obj, video):
     plone_uid = old_obj.UID()
     video.plone_uid = plone_uid
@@ -200,6 +216,7 @@ def map_video(old_obj, video):
     write_file(video_path, file)
     imagem_path = VIDEO_PATH + '/' + imagem_name
     write_file(imagem_path, imagem)
+
 
 def create_news_relations(old_obj, noticia, reverse=False):
     conn = db.get()
@@ -253,6 +270,7 @@ def create_news_relations(old_obj, noticia, reverse=False):
             relation_reverse.content_plone_uid = related_uid
             relation_reverse.related_plone_uid = noticia_uid
 
+
 def map_noticia(old_obj, noticia):
     noticia.plone_uid = old_obj.UID()
     noticia.uid = 1
@@ -299,6 +317,7 @@ def map_noticia(old_obj, noticia):
     noticia.plone_path = '/'.join(old_obj.getPhysicalPath()[3:])
     create_news_relations(old_obj, noticia)
 
+
 def migrate_content(context, portal_type, mapper, map_func, debug=False):
     """Migrate portal_type content from Plone to SQLDatabase, using map_content function
     context: Plone Site object
@@ -324,11 +343,13 @@ def migrate_content(context, portal_type, mapper, map_func, debug=False):
     print debug_text
     return debug_text
 
+
 def migrate_noticia(context):
     """Migrate Noticia content from Plone to SQLDatabase.
     context: Plone Site object
     """
     return migrate_content(context, 'Noticia', db.NewNoticia, map_noticia)
+
 
 def migrate_album(context):
     """Migrate Photo Album content from Plone to SQLDatabase and filesystem.
@@ -336,11 +357,13 @@ def migrate_album(context):
     """
     return migrate_content(context, 'ATPhotoAlbum', db.NewAlbum, map_album)
 
+
 def migrate_audio(context):
     """Migrate Audio content from Plone to SQLDatabase and filesystem.
     context: Plone Site object
     """
     return migrate_content(context, 'Audio', db.NewMedia, map_audio)
+
 
 def migrate_video(context):
     """Migrate Video content from Plone to SQLDatabase and filesystem.
@@ -348,11 +371,13 @@ def migrate_video(context):
     """
     return migrate_content(context, 'Video', db.NewMedia, map_video)
 
+
 def migrate_relation(context):
     """Rebuild relation from Noticias to Album, Video and Audio content.
     context: Plone Site object
     """
     migrade_noticia(context)
+
 
 def migrate_all(context):
     """Migrate all content: Video, Album and Photos, Audio, Notiicas and Relation.
