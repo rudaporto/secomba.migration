@@ -8,7 +8,7 @@ PHOTO_PATH = '/usr/local/zope-secom/migration/photo'
 AUDIO_PATH = '/usr/local/zope-secom/migration/audio'
 VIDEO_PATH = '/usr/local/zope-secom/migration/video'
 
-BEGIN_DAYS = 12
+BEGIN_DAYS = 3000
 END_DAYS = 0
 
 map_type = {
@@ -141,7 +141,10 @@ def map_audio(old_obj, audio):
     audio.audio_video = 1 # 0 - media type audio
     audio.addinfo = old_obj.getResumo().decode('utf-8').encode('iso8859-1','ignore')
     audio.highlight = 0
-    audio.category = 0
+    if old_obj.getPhysicalPath()[3] == 'conversa':
+        audio.category = 2
+    else:
+        audio.category = 0
     audio.reporter = ''
     audio.photo = ''
     audio.link = ''
