@@ -8,7 +8,7 @@ PHOTO_PATH = '/usr/local/zope-secom/migration/photo'
 AUDIO_PATH = '/usr/local/zope-secom/migration/audio'
 VIDEO_PATH = '/usr/local/zope-secom/migration/video'
 
-BEGIN_DAYS = 3000
+BEGIN_DAYS = 3
 END_DAYS = 0
 
 map_type = {
@@ -193,8 +193,13 @@ def map_video(old_obj, video):
     video.added = int(old_obj.created().timeTime())
     video.title = old_obj.Title().decode('utf-8').encode('iso8859-1','ignore')
     video.file_name = filename
-    imagem_name = plone_uid + '-video-preview.jpg' 
-    video.photo_name = imagem_name
+    imagem_name = plone_uid + '-video-preview.jpg'
+    if imagem != '':
+        imagem_path = VIDEO_PATH + '/' + imagem_name
+        write_file(imagem_path, imagem)
+        video.photo_name = imagem_name
+    else:
+        video.photo_name = ''
     video.audio_video = 0 # 0 - media type video
     video.addinfo = old_obj.getResumo().decode('utf-8').encode('iso8859-1','ignore')
     video.highlight = 0
@@ -214,8 +219,6 @@ def map_video(old_obj, video):
     video.plone_path = '/'.join(old_obj.getPhysicalPath()[3:])
     video_path = VIDEO_PATH + '/' + video_filename
     write_file(video_path, file)
-    imagem_path = VIDEO_PATH + '/' + imagem_name
-    write_file(imagem_path, imagem)
 
 
 def create_news_relations(old_obj, noticia, reverse=False):
